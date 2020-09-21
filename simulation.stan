@@ -1,9 +1,13 @@
 functions {
-  // Mixture model
-  // Zero point mass (Unif(a,b)) and nonzero mass N(mu, sigma)
-  real mix2_lpdf(real x, real pzero, real a, real b, real mu, real sigma) {
-        return log_sum_exp(log(pzero) + uniform_lpdf(x | a, b), 
-                           log1m(pzero) + normal_lpdf(x | mu, sigma));
+  real mixK_lpdf(real x, vector lambda, vector mu, vector sigma) {
+    
+    int K=dims(mu)[1];
+    vector[K] lps = log(lambda);
+    
+    for (k in 1:K){
+      lps[k] += normal_lpdf(x | mu[k], sigma[k]);
+    }
+    return log_sum_exp(lps);
   }
 }
 data {
@@ -13,12 +17,13 @@ data {
   int y1[N1];   // cases in vax
   int y0[N0];   // cases in placebo 
   
-  // Hyperparameters
-  real<lower=0,upper=1> pzero;
-  real a;
-  real b;
-  real mu;
-  real<lower=0>  sigma;
+  // Mixture hyperparameters
+  int K;                // Number of mixture components
+  simplex[K] lambda;    // Mixing proportions
+  vector[K] mu;
+  vector<lower=0>[K]  sigma;
+  
+  // Theta0 Beta hyperparameters
   real<lower=0> alpha;
   real<lower=0> beta;
 }
@@ -31,7 +36,7 @@ transformed parameters {
   real theta1 = (1 - ve)*theta0;  // prob of case in vax arm
 }
 model {
-  logrr ~ mix2(pzero, a, b, mu, sigma); // prior for log relative risk
+  logrr ~ mixK(lambda, mu, sigma); // prior for log relative risk
   theta0 ~ beta(alpha, beta);          // prior for placebo incidence
   y1 ~ bernoulli(theta1);           // vax likelihood
   y0 ~ bernoulli(theta0);           // placebo likelihood
