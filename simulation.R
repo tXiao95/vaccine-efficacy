@@ -1,4 +1,5 @@
 library(ggplot2)
+library(LaplacesDemon)
 library(rstan)
 library(rstanarm)
 
@@ -52,9 +53,9 @@ sim <- vaccine_sim(rratio=2/3,
                    cases=30, 
                    vax_cases=10, 
                    N=3000, 
-                   lambda=c(.1, .45, .45), 
-                   mu=c(0, -.38, -.1), 
-                   sigma=c(0.01, .325, .325), 
+                   lambda=c(.25, .25, .25, .25), 
+                   mu=c(0, -.38, -.1, -.7), 
+                   sigma=c(0.01, .325, .325, .05), 
                    alpha=.15, beta=10, iter=1000)
 
 # Rhats should be close to 1
@@ -86,26 +87,16 @@ ggplot2::ggplot(data.frame(x = c(0,.3)), ggplot2::aes(x)) +
   ylab("Density")
 
 # VE prior vs posterior ----------------------------------------------------
-
-dmix <- function(x, lambda, mu, sigma){
-  # Density of VE (transformation of logRR)
+dmix <- function(x, p, mu, sigma){
   x <- log(1-x)
-  K <- length(mu)
-  density <- rep(0, K)
-  for(i in 1:K){
-    density[i] <- lambda[i] * dnorm(x, mu[i], sigma[i])
-  }
-  exp(x) * sum(density)
+  exp(x) * dnormm(x, p, mu, sigma)
 }
-
-dmixK <- function(x, lambda, mu, sigma){ sapply(x, dmix,lambda, mu, sigma) }
 
 dens_ve <- density(ve)
 png(filename = "ve_posterior.png", width=700, height=480)
-df <- data.frame(x = seq(-.5,.5,.01)) 
-df$y <- dmixK(df$x, data$lambda, data$mu, data$sigma)
-fig <- ggplot() + 
-  geom_line(data=df, aes(x,y,col="prior")) +
+fig <- ggplot(data.frame(x = c(-.5,.5)), ggplot2::aes(x)) + 
+  stat_dist("prior", size = .5, fun = dmix,
+            args = list(p=data$lambda, mu = data$mu, sigma = data$sigma)) + 
   geom_line(data=data.frame(x = dens_ve$x, y = dens_ve$y), aes(x,y, col="posterior")) + 
   theme_bw() + 
   geom_vline(xintercept=0.5, linetype= "dashed") + 
