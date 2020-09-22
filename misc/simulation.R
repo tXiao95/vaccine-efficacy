@@ -40,6 +40,11 @@ vaccine_sim <- function(rratio, cases, vax_cases, N,
   
   K <- length(mu)
   
+  # Iin case of scalar input
+  lambda <- as.array(lambda)
+  mu <- as.array(mu)
+  sigma <- as.array(sigma)
+  
   data <- list(y1 = y1, y0 = y0, N0 = N0, N1 = N1, 
                K = K, lambda = lambda, mu = mu, sigma = sigma, 
                alpha = alpha, beta = beta)
@@ -53,9 +58,9 @@ sim <- vaccine_sim(rratio=2/3,
                    cases=30, 
                    vax_cases=10, 
                    N=3000, 
-                   lambda=c(.25, .25, .25, .25), 
-                   mu=c(0, -.38, -.1, -.7), 
-                   sigma=c(0.01, .325, .325, .05), 
+                   lambda=c(1), 
+                   mu=c(-.38), 
+                   sigma=c(.01), 
                    alpha=.15, beta=10, iter=1000)
 
 # Rhats should be close to 1
