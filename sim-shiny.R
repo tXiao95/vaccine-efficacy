@@ -38,8 +38,8 @@ vaccine_sim <- function(rratio, cases, vax_cases, N,
   
   # In case of scalar input
   lambda <- as.array(lambda)
-  mu <- as.array(mu)
-  sigma <- as.array(sigma)
+  mu     <- as.array(mu)
+  sigma  <- as.array(sigma)
   
   data <- list(y1 = y1, y0 = y0, N0 = N0, N1 = N1, 
                K = K, lambda = lambda, mu = mu, sigma = sigma, 

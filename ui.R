@@ -67,7 +67,7 @@ shinyUI(fluidPage(
         column(6,
           titlePanel("Prior and Posterior Graph"),
           plotOutput("theta_prior"),
-          sliderInput("theta_x", "x-axis", min=0, max=1, step=0.1, value=c(0,1)),
+          sliderInput("theta_x", "x-axis", min=0, max=1, step=0.01, value=c(0,1)),
           plotOutput("ve_prior"),
           sliderInput("ve_x", "x-axis", min=-2, max=2, step=0.1, value=c(-.5,.5))
         )

@@ -52,14 +52,16 @@ shinyServer(function(input, output) {
         lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], NA))
         mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
         sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
-        sim    <- vaccine_sim(rratio=input$rratio, 
-                               cases=input$cases, 
-                               vax_cases=input$vax_cases, 
-                               N=input$N, 
-                               lambda=lambda, 
-                               mu=mu, 
-                               sigma=sigma, 
-                               alpha=input$alpha, beta=input$beta, iter=1000)
+        withProgress(message="Running STAN model: compilation make take some time..", {
+            sim    <- vaccine_sim(rratio=input$rratio, 
+                                  cases=input$cases, 
+                                  vax_cases=input$vax_cases, 
+                                  N=input$N, 
+                                  lambda=lambda, 
+                                  mu=mu, 
+                                  sigma=sigma, 
+                                  alpha=input$alpha, beta=input$beta, iter=1000)
+        })
         
         # Rhats should be close to 1
         fit <- sim$fit
@@ -72,8 +74,12 @@ shinyServer(function(input, output) {
         dens_ve <- density(ve)
         dens_theta0 <- density(theta0)
         list(dens_ve=dens_ve, dens_theta0=dens_theta0)
-    }, ignoreNULL = FALSE)
+    }, ignoreNULL = TRUE)
 
+
+# Output of Stan Code -----------------------------------------------------
+
+    
 # Reset button ------------------------------------------------------------
 
     observeEvent(input$reset, {
@@ -92,13 +98,14 @@ shinyServer(function(input, output) {
         ggplot(data.frame(x = c(0,1)), ggplot2::aes(x)) +
             stat_dist("prior", size = 1, fun = dbeta,
                       args = list(shape1 = input$alpha, shape2 = input$beta)) + 
-            geom_line(data=data.frame(x = dens()$dens_theta0$x, y = dens()$dens_theta0$y), aes(x,y, col="posterior")) + 
+            geom_line(data=data.frame(x = dens()$dens_theta0$x, y = dens()$dens_theta0$y), aes(x,y, col="posterior"),size=1) + 
             theme_bw() + 
             geom_hline(yintercept=0) + 
             geom_vline(xintercept=0) + 
-            ggtitle("Placebo incidence") + 
+            ggtitle("Placebo incidence (theta0)") + 
             ylab("Density") + 
-            xlab("theta0")
+            xlab("theta0") + 
+            xlim(input$theta_x)
     
     }, res = 96)
 
@@ -111,12 +118,13 @@ shinyServer(function(input, output) {
         ggplot(data.frame(x = c(-.5,.5)), ggplot2::aes(x)) + 
             stat_dist("prior", size = 1, fun = dmix,
                       args = list(p=lambda, mu = mu, sigma = sigma)) + 
-            geom_line(data=data.frame(x = dens()$dens_ve$x, y = dens()$dens_ve$y), aes(x,y, col="posterior")) + 
+            geom_line(data=data.frame(x = dens()$dens_ve$x, y = dens()$dens_ve$y), aes(x,y, col="posterior"), size=1) + 
             theme_bw() + 
             geom_vline(xintercept=0.5, linetype= "dashed") + 
             geom_hline(yintercept=0) + 
-            ggtitle("Vaccine Efficacy") + 
+            ggtitle("Vaccine Efficacy (1-RR)") + 
             ylab("Density") + 
-            xlab("VE")
+            xlab("VE") + 
+            xlim(input$ve_x)
     }, res = 96)
 })
