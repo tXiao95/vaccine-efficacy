@@ -22,7 +22,7 @@ shinyUI(fluidPage(
             )
           ),
 
-# Parameters --------------------------------------------------------------
+# Default Prior and Data Parameters --------------------------------------------------------------
 
           wellPanel(
             fluidRow(
@@ -43,7 +43,7 @@ shinyUI(fluidPage(
               column(4,
                      h4("Data parameters"),
                      numericInput("N", "Total subjects at enrollment", value = 3000, min = 0, step = 1),
-                     numericInput("rratio", "Randomization ratio", value = 0.67, min = 0, max = 1),
+                     numericInput("rratio", "Randomization ratio", value = 0.67, min = 0, max = .1),
                      numericInput("cases", "Total cases", value = 30, min = 0, step = 1),
                      numericInput("vax_cases", "Vaccine cases", value = 10, min = 0, step = 1)
               ),
@@ -81,7 +81,8 @@ shinyUI(fluidPage(
                            tabPanel("Plot",
                                     plotlyOutput("ve_prior"),
                                     sliderInput("ve_x", "VE x-axis", min=-2, max = 2, value = c(-.5,.5), step = .01),
-                                    plotlyOutput("theta_prior")
+                                    plotlyOutput("theta_prior"),
+                                    sliderInput("theta0_x", "Theta0 x-axis", min=0, max = 1, value = c(0,.05), step = .01)
                            ),
                            tabPanel("Documentation"),
                            tabPanel("Console Output")

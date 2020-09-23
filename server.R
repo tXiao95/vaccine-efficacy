@@ -8,10 +8,6 @@ library(purrr)
 
 source("sim-shiny.R")
 
-stat_dist <- function(dist, ...) {
-    ggplot2::stat_function(ggplot2::aes_(color = dist), ...)
-}
-
 dmix <- function(x, p, mu, sigma){
     (1-x) * dnormm(log(1-x), p, mu, sigma)
 }
@@ -46,7 +42,7 @@ shinyServer(function(input, output, session) {
                                   lambda=lambda, 
                                   mu=mu, 
                                   sigma=sigma, 
-                                  alpha=input$alpha, beta=input$beta, iter=1000)
+                                  alpha=input$alpha, beta=input$beta, iter=3000)
         })
         
         # Rhats should be close to 1
@@ -105,53 +101,53 @@ shinyServer(function(input, output, session) {
         if(input$prior == "Very Skeptical"){
             updateNumericInput(session, "n", value = 2)
             
-            output$lambda <- renderUI(list(numericInput("p1", "p1", value = .8, min = 0, max = 1),
-                                           numericInput("p2", "p2", value = .2, min = 0, max = 1)))
+            output$lambda <- renderUI(list(disabled(numericInput("p1", "p1", value = .8, min = 0, max = 1, step=.01)),
+                                           disabled(numericInput("p2", "p2", value = .2, min = 0, max = 1, step=.01))))
             
-            output$mu <- renderUI(list(numericInput("mu1", "mu1", value = 0),
-                                       numericInput("mu2", "mu2", value = -.38)))
+            output$mu <- renderUI(list(disabled(numericInput("mu1", "mu1", value = 0, step=.01)),
+                                       disabled(numericInput("mu2", "mu2", value = -.38, step=.01))))
             
-            output$sigma <- renderUI(list(numericInput("sigma1", "sigma1", value = 0.1, min=0),
-                                          numericInput("sigma2", "sigma2", value = .325, min = 0)))
+            output$sigma <- renderUI(list(disabled(numericInput("sigma1", "sigma1", value = 0.1, min=0, step=.01)),
+                                          disabled(numericInput("sigma2", "sigma2", value = .325, min = 0, step=.01))))
             
         } else if(input$prior == "Skeptical"){
             updateNumericInput(session, "n", value = 2)
-            output$lambda <- renderUI(list(numericInput("p1", "p1", value = .4, min = 0, max = 1),
-                                           numericInput("p2", "p2", value = .6, min = 0, max = 1)))
+            output$lambda <- renderUI(list(disabled(numericInput("p1", "p1", value = .4, min = 0, max = 1)),
+                                           disabled(numericInput("p2", "p2", value = .6, min = 0, max = 1))))
             
-            output$mu     <- renderUI(list(numericInput("mu1", "mu1", value = 0),
-                                           numericInput("mu2", "mu2", value = -.38)))
+            output$mu     <- renderUI(list(disabled(numericInput("mu1", "mu1", value = 0)),
+                                           disabled(numericInput("mu2", "mu2", value = -.38))))
             
-            output$sigma  <- renderUI(list(numericInput("sigma1", "sigma1", value = 0.325, min=0), 
-                                           numericInput("sigma2", "sigma2", value = 0.325, min=0)))
+            output$sigma  <- renderUI(list(disabled(numericInput("sigma1", "sigma1", value = 0.325, min=0)), 
+                                           disabled(numericInput("sigma2", "sigma2", value = 0.325, min=0))))
         } else if(input$prior == "Cautiously Optimistic"){
             updateNumericInput(session, "n", value = 1)
-            output$lambda <- renderUI(list(numericInput("p1", "p1", value = 1, min = 0, max = 1)))
-            output$mu     <- renderUI(list(numericInput("mu1", "mu1", value = -.5)))
-            output$sigma  <- renderUI(list(numericInput("sigma1", "sigma1", value = 0.325, min=0)))
+            output$lambda <- renderUI(list(disabled(numericInput("p1", "p1", value = 1, min = 0, max = 1))))
+            output$mu     <- renderUI(list(disabled(numericInput("mu1", "mu1", value = -.5))))
+            output$sigma  <- renderUI(list(disabled(numericInput("sigma1", "sigma1", value = 0.325, min=0))))
             
         } else if(input$prior == "Optimistic"){
             updateNumericInput(session, "n", value = 1)
-            output$lambda <- renderUI(list(numericInput("p1", "p1", value = 1, min = 0, max = 1)))
-            output$mu     <- renderUI(list(numericInput("mu1", "mu1", value = -.7)))
-            output$sigma  <- renderUI(list(numericInput("sigma1", "sigma1", value = 0.1, min=0)))
+            output$lambda <- renderUI(list(disabled(numericInput("p1", "p1", value = 1, min = 0, max = 1))))
+            output$mu     <- renderUI(list(disabled(numericInput("mu1", "mu1", value = -.7))))
+            output$sigma  <- renderUI(list(disabled(numericInput("sigma1", "sigma1", value = 0.1, min=0))))
         } else if(input$prior == "Very Optimistic"){
             updateNumericInput(session, "n", value = 1)
-            output$lambda <- renderUI(list(numericInput("p1", "p1", value = 1, min = 0, max = 1)))
-            output$mu     <- renderUI(list(numericInput("mu1", "mu1", value = -1.2)))
-            output$sigma  <- renderUI(list(numericInput("sigma1", "sigma1", value = 0.1, min=0)))
+            output$lambda <- renderUI(list(disabled(numericInput("p1", "p1", value = 1, min = 0, max = 1))))
+            output$mu     <- renderUI(list(disabled(numericInput("mu1", "mu1", value = -1.2))))
+            output$sigma  <- renderUI(list(disabled(numericInput("sigma1", "sigma1", value = 0.1, min=0))))
         } else if(input$prior == "Custom"){
             enable("n")
             output$lambda <- renderUI({
-                map(lambda_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]]), min=0, max=1 ) %||% 0)
+                map(lambda_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]]), min=0, max=1 ,step=.01) %||% 0)
             })
             
             output$mu <- renderUI({
-                map(mu_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]])) %||% 0)
+                map(mu_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]]), step=.01) %||% 0)
             })
             
             output$sigma <- renderUI({
-                map(sigma_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]]), min = 0) %||% 0)
+                map(sigma_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]]), min = 0, step=.01) %||% 0)
             })
         } 
     }, ignoreInit = FALSE)
@@ -164,12 +160,14 @@ shinyServer(function(input, output, session) {
         reset("alpha")
         reset("beta")
         reset("n")
+        reset("theta0_x")
+        reset("ve_x")
     })
 
 # Plot of theta0 ----------------------------------------------------------
 
     output$theta_prior <- renderPlotly({
-        x <- seq(0,1,.01)
+        x <- seq(0,1,.001)
         y <- dbeta(x, input$alpha, input$beta)
         plot <- ggplot(data.frame(x=x,y=y), aes(x,y)) + 
             geom_line(aes(col="prior")) +
@@ -179,7 +177,8 @@ shinyServer(function(input, output, session) {
             geom_vline(xintercept=0) + 
             ggtitle("Placebo incidence (theta0)") + 
             ylab("Density") + 
-            xlab("theta0")
+            xlab("theta0") + 
+            xlim(input$theta0_x)
             
         ggplotly(plot)
     
@@ -188,11 +187,15 @@ shinyServer(function(input, output, session) {
 # Plot of VE --------------------------------------------------------------
 
     output$ve_prior <- renderPlotly({
-        lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], NA))
-        mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
-        sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
+        lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], 100))
+        mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], 100))
+        sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], 100))
+        
+        # Validation in case mixture probabilities don't sum to 1
+        req(sum(lambda) == 1 & all(lambda>0), cancelOutput = TRUE)
+        
     
-        x <- seq(-1,1,.01)
+        x <- seq(-1,1,.001)
         y <- dmix(x, p=lambda, mu=mu, sigma=sigma)
         
         plot <- ggplot(data.frame(x=x,y=y), aes(x,y)) +
