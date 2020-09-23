@@ -9,7 +9,13 @@ library(purrr)
 source("sim-shiny.R")
 
 dmix <- function(x, p, mu, sigma){
+    # Transform from density of logRR
     (1-x) * dnormm(log(1-x), p, mu, sigma)
+}
+
+pmix <- function(x, p, mu, sigma){
+    # Transform from CDF of logRR
+    1 - pnormm(log(1-x), p, mu, sigma)
 }
 
 default_val <- function(x, value) {
@@ -53,9 +59,7 @@ shinyServer(function(input, output, session) {
         ve <- samples$ve
         theta0 <- samples$theta0
         
-        dens_ve <- density(ve)
-        dens_theta0 <- density(theta0)
-        list(dens_ve=dens_ve, dens_theta0=dens_theta0)
+        list(theta0=theta0,ve = ve)
     }, ignoreNULL = FALSE)
 
 
@@ -163,25 +167,29 @@ shinyServer(function(input, output, session) {
         reset("theta0_x")
         reset("ve_x")
     })
-
+    
 # Plot of theta0 ----------------------------------------------------------
 
     output$theta_prior <- renderPlotly({
         x <- seq(0,1,.001)
         y <- dbeta(x, input$alpha, input$beta)
-        plot <- ggplot(data.frame(x=x,y=y), aes(x,y)) + 
-            geom_line(aes(col="prior")) +
-            #geom_line(data=data.frame(x = dens()$dens_theta0$x, y = dens()$dens_theta0$y), aes(x,y, col="posterior"),size=1) + 
-            theme_bw() + 
-            geom_hline(yintercept=0) + 
-            geom_vline(xintercept=0) + 
-            ggtitle("Placebo incidence (theta0)") + 
-            ylab("Density") + 
-            xlab("theta0") + 
-            xlim(input$theta0_x)
+        
+        fig <- plot_ly()
+        
+        fig <- fig %>%
+            add_trace(
+                mode = 'lines', 
+                x = x, 
+                y = y,
+                hovertemplate = paste('P(theta0 >', x, '=', 
+                                      round(1-pbeta(x, input$alpha, input$beta), 3),'<extra></extra>'),
+                fill = 'tozeroy',
+                showlegend = FALSE
+            ) %>%
             
-        ggplotly(plot)
-    
+            layout(title = 'Prior on Placebo Incidence')
+        
+        fig
     })
 
 # Plot of VE --------------------------------------------------------------
@@ -198,27 +206,40 @@ shinyServer(function(input, output, session) {
         x <- seq(-1,1,.001)
         y <- dmix(x, p=lambda, mu=mu, sigma=sigma)
         
-        plot <- ggplot(data.frame(x=x,y=y), aes(x,y)) +
-            geom_line(aes(col="prior")) + 
-            #geom_line(data=data.frame(x = dens()$dens_ve$x, y = dens()$dens_ve$y), aes(x,y, col="posterior"), size=1) +
-            theme_bw() +
-            geom_vline(xintercept=0.5, linetype= "dashed") +
-            geom_hline(yintercept=0) +
-            ggtitle("Vaccine Efficacy (1-RR)") +
-            ylab("Density") +
-            xlab("VE") + 
-            xlim(input$ve_x)
+        fig <- plot_ly()
         
+        fig <- fig %>%
+            add_trace(
+                mode = 'lines', 
+                x = ~x, 
+                y = ~y,
+                name = 'Prior',
+                fill = 'tozeroy',
+                hovertemplate = paste('P(VE >', round(x, 3), '=', 
+                                      round(1-pmix(x, p=lambda, mu=mu, sigma=sigma), 3)),
+                showlegend = FALSE
+            ) %>%
+            
+            layout(title = 'Vaccine Efficacy', xaxis=list(title='VE'), yaxis=list(title='Density'))
         
-        if(input$do_sim==0){
-            ggplotly(plot)
+        if(input$do_sim == 0){
+            fig
         } else{
-            ggplotly(plot +
-                geom_line(data=data.frame(x = dens()$dens_ve$x, 
-                                          y = dens()$dens_ve$y), 
-                          aes(x,y, col="posterior"), size=1)) 
-                
+            ve <- dens()$ve
+            density_ve <- density(ve)
+            p_ve <- sapply(~density_ve$x, function(y) mean(ve > y))
+            fig
+            fig %>%
+                add_trace(
+                    mode = 'lines',
+                    x = ~density_ve$x,
+                    y = ~density_ve$y,
+                    name = 'Posterior',
+                    fill = 'tozeroy',
+                    # hovertemplate = paste('P(VE >', round(x, 3), '=',
+                    #                       round(p_ve, 3),'<extra></extra>'),
+                    showlegend = FALSE
+                )
         }
-        
     })
 })

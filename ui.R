@@ -13,11 +13,14 @@ shinyUI(fluidPage(
           titlePanel("Simulation Settings"),
           wellPanel(
             fluidRow(
-              column(2, offset = 3,
+              column(2, offset=2,
                      actionButton("do_sim", "Run Simulation", icon('laptop-code'))
               ),
-              column(2,
+              column(2, 
                      actionButton("reset", "Reset Inputs", icon('undo'))
+              ),
+              column(2,
+                     actionButton("clear_posterior", "Clear Posterior", icon('eraser'))
               )
             )
           ),
@@ -79,10 +82,13 @@ shinyUI(fluidPage(
         column(6,
                tabsetPanel(type = "tabs",
                            tabPanel("Plot",
+                                    br(),
                                     plotlyOutput("ve_prior"),
-                                    sliderInput("ve_x", "VE x-axis", min=-2, max = 2, value = c(-.5,.5), step = .01),
+                                    br(),
+                                    br(),
+                                    #sliderInput("ve_x", "VE x-axis", min=-2, max = 2, value = c(-.5,.5), step = .01),
                                     plotlyOutput("theta_prior"),
-                                    sliderInput("theta0_x", "Theta0 x-axis", min=0, max = 1, value = c(0,.05), step = .01)
+                                    #sliderInput("theta0_x", "Theta0 x-axis", min=0, max = 1, value = c(0,.05), step = .01)
                            ),
                            tabPanel("Documentation"),
                            tabPanel("Console Output")
