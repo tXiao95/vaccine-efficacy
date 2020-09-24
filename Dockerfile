@@ -9,7 +9,6 @@ RUN install2.r -e rstan LaplacesDemon shinyjs plotly
 # RUN R -e "install.packages('shinydashboard', repos='http://cran.rstudio.com/')"
 
 #! if you add lines do it after the rstan install so that it caches !#
-COPY simulation.rds /srv/shiny-server/
 COPY vaccine-efficacy.Rproj /srv/shiny-server/
 COPY *.R /srv/shiny-server/
 COPY simulation.stan /srv/shiny-server/
