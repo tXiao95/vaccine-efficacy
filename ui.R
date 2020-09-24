@@ -31,7 +31,8 @@ shinyUI(fluidPage(
             fluidRow(
               column(4,
                      selectInput("protocol", "Select interim analysis protocol", 
-                                 c("Moderna 1", "Moderna 2", "Pfizer 1", "Custom"))
+                                 c("Pfizer Interim 1", "Pfizer Interim 2", "Pfizer Interim 3", 
+                                   "Pfizer Interim 4", "Pfizer Final", "Custom"))
               ),
               column(6, 
                      selectInput("prior", "Select prior on Vaccine Efficacy", 

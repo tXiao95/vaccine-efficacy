@@ -1,6 +1,11 @@
 library(rstan)
 
-rstan_options(auto_write = TRUE)
+# Check if stanmodel already exists otherwise write it to avoid compilation
+if(!file.exists("simulation.rds")){
+  model <- stan_model(file = "simulation.stan", auto_write = TRUE)
+} else{
+  model <- readRDS("simulation.rds")
+}
 
 #' @param rratio randomization ratio: # vax / # total
 #' @param cases total cases at time of interim analysis
@@ -45,7 +50,7 @@ vaccine_sim <- function(rratio, cases, vax_cases, N,
                K = K, lambda = lambda, mu = mu, sigma = sigma, 
                alpha = alpha, beta = beta)
   
-  fit = stan(file="simulation.stan", data = data, ...) 
+  fit <- sampling(model, data = data, ...)
   
   return( list(fit = fit, data=data) )
 }
