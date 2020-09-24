@@ -1,6 +1,5 @@
 library(shiny)
 library(LaplacesDemon)
-library(ggplot2)
 library(plotly)
 library(purrr)
 
@@ -10,7 +9,7 @@ source("sim-shiny.R")
 
 dmix <- function(x, p, mu, sigma){
     # Transform from density of logRR
-    (1-x) * dnormm(log(1-x), p, mu, sigma)
+    dnormm(log(1-x), p, mu, sigma) / (1 - x)
 }
 
 pmix <- function(x, p, mu, sigma){
@@ -71,21 +70,32 @@ shinyServer(function(input, output, session) {
         disable("rratio")
         disable("cases")
         disable("vax_cases")
-        if(input$protocol == "Moderna 1"){
-            updateNumericInput(session, "N", value = 1000)
+        if(input$protocol == "Pfizer Interim 1"){
+            updateNumericInput(session, "N", value = 3000)
             updateNumericInput(session, "rratio", value = 0.5)
-            updateNumericInput(session, "cases", value = 26)
+            updateNumericInput(session, "cases", value = 32)
             updateNumericInput(session, "vax_cases", value = 6)
-        } else if(input$protocol == "Moderna 2"){
-            updateNumericInput(session, "N", value = 2000)
-            updateNumericInput(session, "rratio", value = .67)
-            updateNumericInput(session, "cases", value = 30)
-            updateNumericInput(session, "vax_cases", value = 10)
-        } else if(input$protocol == "Pfizer 1"){
-            updateNumericInput(session, "N", value = 30000)
-            updateNumericInput(session, "rratio", value = .6)
-            updateNumericInput(session, "cases", value = 100)
-            updateNumericInput(session, "vax_cases", value = 30)
+        } else if(input$protocol == "Pfizer Interim 2"){
+            updateNumericInput(session, "N", value = 3000)
+            updateNumericInput(session, "rratio", value = .5)
+            updateNumericInput(session, "cases", value = 62)
+            updateNumericInput(session, "vax_cases", value = 15)
+        } else if(input$protocol == "Pfizer Interim 3"){
+            updateNumericInput(session, "N", value = 3000)
+            updateNumericInput(session, "rratio", value = .5)
+            updateNumericInput(session, "cases", value = 92)
+            updateNumericInput(session, "vax_cases", value = 25)
+        
+        } else if(input$protocol == "Pfizer Interim 4"){
+            updateNumericInput(session, "N", value = 3000)
+            updateNumericInput(session, "rratio", value = .5)
+            updateNumericInput(session, "cases", value = 120)
+            updateNumericInput(session, "vax_cases", value = 35)
+        } else if(input$protocol == "Pfizer Final"){
+            updateNumericInput(session, "N", value = 3000)
+            updateNumericInput(session, "rratio", value = .5)
+            updateNumericInput(session, "cases", value = 169)
+            updateNumericInput(session, "vax_cases", value = 53)
         } else if(input$protocol == "Custom"){
             enable("N")
             enable("rratio")
@@ -192,7 +202,7 @@ shinyServer(function(input, output, session) {
         fig
     })
 
-# Plot of VE --------------------------------------------------------------
+# Data table of posterior probs --------------------------------------------------------------
     
     probs <- eventReactive(input$do_sim, {
         ve <- dens()$ve
@@ -208,7 +218,9 @@ shinyServer(function(input, output, session) {
     output$ve_probs <- renderDataTable({
         probs()
     })
-    
+
+# Prior and Posterior densitiy graph --------------------------------------
+
     # CLearing posterior graph
     v <- reactiveValues(clear_posterior=TRUE)
     observeEvent(input$clear_posterior, v$clear_posterior <- TRUE)
@@ -229,7 +241,7 @@ shinyServer(function(input, output, session) {
         
         # Standardize plotting of prior and posterior densities
         xmin <- -2
-        xmax <- 2
+        xmax <- 1
         step <- .001
         xaxis <- seq(xmin, xmax, step)
         num_x <- length(xaxis)
@@ -250,9 +262,9 @@ shinyServer(function(input, output, session) {
                 hovertemplate = paste0('P(VE > ', prior_x, ') = ', prior_p)
             ) %>%
             
-            layout(title = 'Vaccine Efficacy', 
-                   xaxis=list(title='VE', showspikes = TRUE, spikedash = 'solid',
-                              spikesides = FALSE, spikethickness = 3, showlegend = TRUE), 
+            layout(title = 'Vaccine Efficacy', spikedistance = -1,
+                   xaxis=list(title='VE', showspikes = TRUE, spikedash = 'solid', spikesnap = 'cursor',
+                              spikesides = FALSE, spikethickness = 3, showlegend = TRUE, spikemode = 'across'), 
                    yaxis=list(title='Density'), hovermode = 'x')
         
         # If on startup or clearing posterior, only plot prior. Otherwise plot both

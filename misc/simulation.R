@@ -49,7 +49,8 @@ vaccine_sim <- function(rratio, cases, vax_cases, N,
                K = K, lambda = lambda, mu = mu, sigma = sigma, 
                alpha = alpha, beta = beta)
   
-  fit = stan(file="simulation.stan", data = data, ...) 
+  stanfit <- readRDS('simulation.rds')
+  fit = stan(file="simulation.stan", fit=stanfit, data = data, ...) 
   
   return( list(fit = fit, data=data) )
 }
@@ -62,6 +63,7 @@ sim <- vaccine_sim(rratio=2/3,
                    mu=c(-.38), 
                    sigma=c(.01), 
                    alpha=.15, beta=10, iter=1000)
+
 
 # Rhats should be close to 1
 fit <- sim$fit
