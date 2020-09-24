@@ -197,7 +197,7 @@ shinyServer(function(input, output, session) {
                 showlegend = FALSE
             ) %>%
             
-            layout(title = 'Prior on Placebo Incidence')
+            layout(title = 'Prior on Placebo Incidence', xaxis = list(range = input$theta0_xaxis))
         
         fig
     })
@@ -263,7 +263,7 @@ shinyServer(function(input, output, session) {
             ) %>%
             
             layout(title = 'Vaccine Efficacy', spikedistance = -1,
-                   xaxis=list(title='VE', showspikes = TRUE, spikedash = 'solid', spikesnap = 'cursor',
+                   xaxis=list(title='VE', showspikes = TRUE, spikedash = 'solid', spikesnap = 'cursor', range = input$ve_xaxis,
                               spikesides = FALSE, spikethickness = 3, showlegend = TRUE, spikemode = 'across'), 
                    yaxis=list(title='Density'), hovermode = 'x')
         

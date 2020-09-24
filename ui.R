@@ -87,9 +87,19 @@ shinyUI(fluidPage(
                            tabPanel("Plot",
                                     br(),
                                     plotlyOutput("ve_prior"),
+                                    fluidRow(
+                                      column(6, offset = 4, 
+                                             sliderInput("ve_xaxis", "VE x-axis", value = c(-.5, 1), min = -2, max = 1, step = 0.1)
+                                      )
+                                    ),
                                     br(),
                                     br(),
-                                    plotlyOutput("theta_prior")
+                                    plotlyOutput("theta_prior"),
+                                    fluidRow(
+                                      column(6, offset = 4, 
+                                             sliderInput("theta0_xaxis", "Theta0 x-axis", value = c(0, 0.05), min = 0, max = 1, step = 0.01)
+                                      )
+                                    )
                            ),
                            #tabPanel("Console Output"),
                            tabPanel("Documentation")
