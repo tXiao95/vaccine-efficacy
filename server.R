@@ -3,6 +3,7 @@ library(LaplacesDemon)
 library(ggplot2)
 library(plotly)
 library(purrr)
+library(shinystan)
 
 # helper functions --------------------------------------------------------
 
@@ -37,7 +38,7 @@ shinyServer(function(input, output, session) {
 # Actual stan model run ---------------------------------------------------
 
     dens <- eventReactive(input$do_sim, {
-        lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], NA))
+        lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], 100))
         mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
         sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
         withProgress(message="Running STAN model: compilation make take some time..", {
@@ -59,8 +60,9 @@ shinyServer(function(input, output, session) {
         ve <- samples$ve
         theta0 <- samples$theta0
         
-        list(theta0=theta0,ve = ve)
+        list(theta0=theta0, ve = ve, fit=fit)
     }, ignoreNULL = FALSE)
+    
 
 
 # Setting default interim analysis protocols by company -----------------------------------------------------
@@ -96,7 +98,6 @@ shinyServer(function(input, output, session) {
             updateNumericInput(session, "vax_cases", value = NULL)
         }
     }, ignoreInit = FALSE)
-    
 
 # Setting default priors by type ------------------------------------------
 
@@ -171,8 +172,9 @@ shinyServer(function(input, output, session) {
 # Plot of theta0 ----------------------------------------------------------
 
     output$theta_prior <- renderPlotly({
-        x <- seq(0,1,.001)
+        x <- round(seq(0,1,.001), 3)
         y <- dbeta(x, input$alpha, input$beta)
+        p_theta <- round(1-pbeta(x, input$alpha, input$beta), 2)
         
         fig <- plot_ly()
         
@@ -181,8 +183,7 @@ shinyServer(function(input, output, session) {
                 mode = 'lines', 
                 x = x, 
                 y = y,
-                hovertemplate = paste('P(theta0 >', x, '=', 
-                                      round(1-pbeta(x, input$alpha, input$beta), 3),'<extra></extra>'),
+                hoverinfo = 'skip',
                 fill = 'tozeroy',
                 showlegend = FALSE
             ) %>%
@@ -193,52 +194,88 @@ shinyServer(function(input, output, session) {
     })
 
 # Plot of VE --------------------------------------------------------------
-
+    
+    probs <- eventReactive(input$do_sim, {
+        ve <- dens()$ve
+        df <- data.frame(x = c(0.30, 0.50, 0.70, 0.90))
+        df$`P(VE > x | data)` <- round(sapply(df$x, function(x) mean(ve > x)), 2)
+        df
+    })
+    
+    probs_title <- eventReactive(input$do_sim, "Posterior Probabilities")
+    
+    output$ve_probs_title <- renderUI(titlePanel(probs_title()))
+    
+    output$ve_probs <- renderDataTable({
+        probs()
+    })
+    
+    # CLearing posterior graph
+    v <- reactiveValues(clear_posterior=TRUE)
+    observeEvent(input$clear_posterior, v$clear_posterior <- TRUE)
+    observeEvent(input$do_sim, v$clear_posterior <- FALSE)
+    
     output$ve_prior <- renderPlotly({
         lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], 100))
-        mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], 100))
-        sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], 100))
+        mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
+        sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
         
         # Validation in case mixture probabilities don't sum to 1
-        req(sum(lambda) == 1 & all(lambda>0), cancelOutput = TRUE)
+        validate(
+            need(sum(lambda) == 1, 'Mixing probabilities p must sum to 1'),
+            need(all(lambda > 0 & lambda <= 1), 'Mixing probabilities p must be in (0, 1] interval'),
+            need(all(sigma > 0), 'All sigmas must be positive'), 
+            need(all(!is.na(mu) & !is.na(sigma) & !is.na(lambda)), 'All prior fields must be filled out')
+        )
         
-    
-        x <- seq(-1,1,.001)
-        y <- dmix(x, p=lambda, mu=mu, sigma=sigma)
+        # Standardize plotting of prior and posterior densities
+        xmin <- -2
+        xmax <- 2
+        step <- .001
+        xaxis <- seq(xmin, xmax, step)
+        num_x <- length(xaxis)
+        
+        
+        prior_x <- round(xaxis, 3)
+        prior_y <- dmix(prior_x, p=lambda, mu=mu, sigma=sigma)
+        prior_p <- round(1 - pmix(prior_x, lambda, mu, sigma), 2)
         
         fig <- plot_ly()
-        
         fig <- fig %>%
             add_trace(
                 mode = 'lines', 
-                x = ~x, 
-                y = ~y,
+                x = prior_x, 
+                y = prior_y,
                 name = 'Prior',
                 fill = 'tozeroy',
-                hovertemplate = paste('P(VE >', round(x, 3), '=', 
-                                      round(1-pmix(x, p=lambda, mu=mu, sigma=sigma), 3)),
-                showlegend = FALSE
+                hovertemplate = paste0('P(VE > ', prior_x, ') = ', prior_p)
             ) %>%
             
-            layout(title = 'Vaccine Efficacy', xaxis=list(title='VE'), yaxis=list(title='Density'))
+            layout(title = 'Vaccine Efficacy', 
+                   xaxis=list(title='VE', showspikes = TRUE, spikedash = 'solid',
+                              spikesides = FALSE, spikethickness = 3, showlegend = TRUE), 
+                   yaxis=list(title='Density'), hovermode = 'x')
         
-        if(input$do_sim == 0){
+        # If on startup or clearing posterior, only plot prior. Otherwise plot both
+        if(v$clear_posterior ){
             fig
         } else{
             ve <- dens()$ve
-            density_ve <- density(ve)
-            p_ve <- sapply(~density_ve$x, function(y) mean(ve > y))
-            fig
+            density_ve <- density(ve, from = xmin, to = xmax, n = num_x)
+            p_ve <- round(sapply(density_ve$x, function(x) mean(ve > x)), 2)
+            
+            ve_x <- round(density_ve$x, 3)
+            ve_y <- density_ve$y
+            
             fig %>%
                 add_trace(
                     mode = 'lines',
-                    x = ~density_ve$x,
-                    y = ~density_ve$y,
+                    x = ve_x,
+                    y = ve_y,
                     name = 'Posterior',
                     fill = 'tozeroy',
-                    # hovertemplate = paste('P(VE >', round(x, 3), '=',
-                    #                       round(p_ve, 3),'<extra></extra>'),
-                    showlegend = FALSE
+                    hovertemplate = paste0('P(VE > ', ve_x, ')= ', p_ve),
+                    showlegend = TRUE
                 )
         }
     })

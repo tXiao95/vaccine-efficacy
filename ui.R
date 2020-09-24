@@ -74,8 +74,10 @@ shinyUI(fluidPage(
                      numericInput("beta", "Beta parameter", value = 160, min = 0)
               ),
             )
-          )
-        ),
+          ),
+          uiOutput('ve_probs_title'),
+          dataTableOutput("ve_probs")
+        ), 
 
 # Plotting Side -----------------------------------------------------------
       
@@ -86,13 +88,13 @@ shinyUI(fluidPage(
                                     plotlyOutput("ve_prior"),
                                     br(),
                                     br(),
-                                    #sliderInput("ve_x", "VE x-axis", min=-2, max = 2, value = c(-.5,.5), step = .01),
-                                    plotlyOutput("theta_prior"),
-                                    #sliderInput("theta0_x", "Theta0 x-axis", min=0, max = 1, value = c(0,.05), step = .01)
+                                    plotlyOutput("theta_prior")
                            ),
-                           tabPanel("Documentation"),
-                           tabPanel("Console Output")
+                           #tabPanel("Console Output"),
+                           tabPanel("Documentation")
+                           
                )
         )
       )
+
 ))
