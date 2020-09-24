@@ -34,9 +34,12 @@ shinyUI(fluidPage(
                                  c("Pfizer Interim 1", "Pfizer Interim 2", "Pfizer Interim 3", 
                                    "Pfizer Interim 4", "Pfizer Final", "Custom"))
               ),
-              column(6, 
+              column(5, 
                      selectInput("prior", "Select prior on Vaccine Efficacy", 
                                  c("Very Skeptical", "Skeptical", "Cautiously Optimistic", "Optimistic", "Very Optimistic", "Custom"))
+              ), 
+              column(3, 
+                     numericInput("samples", "Number of Samples", value = 6000, min = 0, step = 1000)
               )
             ),
             
@@ -54,22 +57,22 @@ shinyUI(fluidPage(
 
 # Second column of Gaussian mixture priors ---------------------------------
 
-              column(6,
+              column(5,
                      h4("Gaussian mixture prior on log(RR)"),
                      numericInput('n', 'Number of mixture components', 
                                   value = 2, 
                                   min = 0, 
                                   step = 1),
                      fluidRow(
-                       column(3, uiOutput("lambda")),
-                       column(3, uiOutput("mu")),
-                       column(3, uiOutput("sigma"))
+                       column(4, uiOutput("lambda")),
+                       column(4, uiOutput("mu")),
+                       column(4, uiOutput("sigma"))
                      )
               ),
 
 # Third column of Beta priors --------------------------------------------
 
-              column(2,
+              column(3,
                      h4("Beta prior"),
                      numericInput("alpha", "Alpha parameter", value = 4, min = 0),
                      numericInput("beta", "Beta parameter", value = 160, min = 0)
@@ -101,7 +104,8 @@ shinyUI(fluidPage(
                                       )
                                     )
                            ),
-                           #tabPanel("Console Output"),
+                           tabPanel("Console Output", 
+                                    verbatimTextOutput("console")),
                            tabPanel("Documentation")
                            
                )

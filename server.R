@@ -25,6 +25,18 @@ default_val <- function(x, value) {
     } 
 }
 
+# withConsoleRedirect <- function(containerId, expr) {
+#     # Change type="output" to type="message" to catch stderr
+#     # (messages, warnings, and errors) instead of stdout.
+#     txt <- capture.output(results <- expr, type = "output")
+#     if (length(txt) > 0) {
+#         insertUI(paste0("#", containerId), where = "beforeEnd",
+#                  ui = paste0(txt, "\n", collapse = "")
+#         )
+#     }
+#     results
+# }
+
 # Server Side -------------------------------------------------------------
 
 shinyServer(function(input, output, session) {
@@ -39,7 +51,11 @@ shinyServer(function(input, output, session) {
         lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], 100))
         mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
         sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
-        withProgress(message="Running STAN model: compilation make take some time..", {
+        
+        stdout <- vector("character")
+        con <- textConnection('stdout', open = 'wr', local = TRUE)
+        sink(con, type = "output")
+        withProgress(message="Running STAN model: fitting make take some time..", {
             sim    <- vaccine_sim(rratio=input$rratio, 
                                   cases=input$cases, 
                                   vax_cases=input$vax_cases, 
@@ -47,8 +63,12 @@ shinyServer(function(input, output, session) {
                                   lambda=lambda, 
                                   mu=mu, 
                                   sigma=sigma, 
-                                  alpha=input$alpha, beta=input$beta, iter=3000)
+                                  alpha=input$alpha, beta=input$beta, iter=input$samples)
         })
+        sink()
+        close(con)
+        
+        output$console <- renderText(print(paste0(stdout, sep="\n")))
         
         # Rhats should be close to 1
         fit <- sim$fit
