@@ -3,7 +3,6 @@ library(LaplacesDemon)
 library(ggplot2)
 library(plotly)
 library(purrr)
-library(shinystan)
 
 # helper functions --------------------------------------------------------
 
