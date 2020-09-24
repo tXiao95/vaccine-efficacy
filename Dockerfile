@@ -6,11 +6,12 @@ RUN apt-get install -y libv8-dev
 RUN Rscript -e "install.packages('LaplacesDemon', repos='http://cran.rstudio.com/')"
 RUN Rscript -e "install.packages('rstan', repos='http://cran.rstudio.com/')"
 RUN Rscript -e "install.packages('shinyjs', repos='http://cran.rstudio.com/')"
+RUN Rscript -e "install.packages('plotly', repos='http://cran.rstudio.com/')"
 # looks like some neat options here
 # RUN R -e "install.packages('shinydashboard', repos='http://cran.rstudio.com/')"
 
 #! if you add lines do it after the rstan install so that it caches !#
-
+COPY simulation.rds /srv/shiny-server/
 COPY vaccine-efficacy.Rproj /srv/shiny-server/
 COPY *.R /srv/shiny-server/
 COPY simulation.stan /srv/shiny-server/
