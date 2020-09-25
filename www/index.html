@@ -158,6 +158,40 @@
     </div>
   </section>
 
+  <!-- 
+    If we wanted to do subpopulations or severe disease, then we should those options here.
+  -->
+
+  <section class="content-section bg-light" id="background5">
+    <div class="container text-center">
+      <div class="row">
+        <div class="col-lg-10 mx-auto">
+          <h2>Let's get started! Choose Your prior.</h2>
+          <p class="lead mb-5">
+            We include several "default" priors as options below ranging from very skeptical (little belief that the vaccine will be at all effective) to very optimistic (strong belief that the vaccine will be highly effective) or advanced users can build their own prior by specifying a mixture of Normal distributions.
+          </p> 
+          <p class = "lead mb-5">
+            {{ selectInput("prior", "Prior on Vaccine Efficacy", 
+                           c("Very Skeptical", "Skeptical", "Cautiously Optimistic", "Optimistic", "Very Optimistic", "Custom")) }}
+            
+            {{ wellPanel(fluidRow(column(6,
+                     h4("Prior on VE"),
+                     numericInput('n', 'Number of mixture components', 
+                                  value = 2, 
+                                  min = 0, 
+                                  step = 1),
+                     fluidRow(
+                       column(3, uiOutput("lambda")),
+                       column(3, uiOutput("mu")),
+                       column(3, uiOutput("sigma"))
+                     )
+              ))) }}
+          </p>   
+          <a class="btn btn-dark btn-xl js-scroll-trigger" href="#background6">Input data</a>
+        </div>
+      </div>
+    </div>
+  </section>
 
   <!-- Footer -->
   <footer class="footer text-center">

@@ -62,18 +62,18 @@ ui <- htmlTemplate(
 
 # # Second column of Gaussian mixture priors ---------------------------------
 
-#               column(6,
-#                      h4("Gaussian mixture prior on log(RR)"),
-#                      numericInput('n', 'Number of mixture components', 
-#                                   value = 2, 
-#                                   min = 0, 
-#                                   step = 1),
-#                      fluidRow(
-#                        column(3, uiOutput("lambda")),
-#                        column(3, uiOutput("mu")),
-#                        column(3, uiOutput("sigma"))
-#                      )
-#               ),
+              # column(6,
+              #        h4("Gaussian mixture prior on log(RR)"),
+              #        numericInput('n', 'Number of mixture components', 
+              #                     value = 2, 
+              #                     min = 0, 
+              #                     step = 1),
+              #        fluidRow(
+              #          column(3, uiOutput("lambda")),
+              #          column(3, uiOutput("mu")),
+              #          column(3, uiOutput("sigma"))
+              #        )
+              # ),
 
 # # Third column of Beta priors --------------------------------------------
 
