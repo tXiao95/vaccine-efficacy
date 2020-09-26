@@ -17,6 +17,13 @@ pmix <- function(x, p, mu, sigma){
     1 - pnormm(log(1-x), p, mu, sigma)
 }
 
+lik <- function(ve, vax_cases, N1, theta0){
+    # Likelihood of VE, keeping theta0 fixed at its MLE
+    rr <- 1-ve
+    theta1 <- rr * theta0
+    exp( vax_cases * log(theta1) + (N1 - vax_cases) * log(1-theta1))
+}
+
 default_val <- function(x, value) {
     if (isTruthy(x)) {
         x
@@ -25,17 +32,6 @@ default_val <- function(x, value) {
     } 
 }
 
-# withConsoleRedirect <- function(containerId, expr) {
-#     # Change type="output" to type="message" to catch stderr
-#     # (messages, warnings, and errors) instead of stdout.
-#     txt <- capture.output(results <- expr, type = "output")
-#     if (length(txt) > 0) {
-#         insertUI(paste0("#", containerId), where = "beforeEnd",
-#                  ui = paste0(txt, "\n", collapse = "")
-#         )
-#     }
-#     results
-# }
 
 # Server Side -------------------------------------------------------------
 
@@ -267,6 +263,18 @@ shinyServer(function(input, output, session) {
         num_x <- length(xaxis)
         
         
+        # Compute likelihood
+        rratio <- input$rratio
+        N <- input$N
+        N1 <- round(N * rratio)
+        N0 <- N - N1
+        vax_cases <- input$vax_cases
+        plac_cases <- input$cases - vax_cases
+        theta0_mle <- plac_cases / N0
+        
+        ll <- sapply(xaxis, lik, vax_cases=vax_cases, N1=N1, theta0=theta0_mle)
+        ll <- ll / max(ll) * 2
+        
         prior_x <- round(xaxis, 3)
         prior_y <- dmix(prior_x, p=lambda, mu=mu, sigma=sigma)
         prior_p <- round(1 - pmix(prior_x, lambda, mu, sigma), 2)
@@ -280,6 +288,15 @@ shinyServer(function(input, output, session) {
                 name = 'Prior',
                 fill = 'tozeroy',
                 hovertemplate = paste0('P(VE > ', prior_x, ') = ', prior_p)
+            ) %>%
+            
+            add_trace(
+                mode = 'lines', 
+                x = prior_x, 
+                y = ll,
+                name = 'Likelihood',
+                hoverinfo = 'skip',
+                fill = 'tozeroy'
             ) %>%
             
             layout(title = 'Vaccine Efficacy', spikedistance = -1,
