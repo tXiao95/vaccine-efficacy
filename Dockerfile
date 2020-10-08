@@ -19,7 +19,7 @@ RUN R -e "model <- rstan::stan_model('/srv/shiny-server/simulation.stan', auto_w
 # select port
 EXPOSE 3838
 
-# don't run as root
+# SECURITY: We don't want the app to run as root.
 USER shiny
 
 # run app as entry point
