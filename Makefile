@@ -8,3 +8,6 @@ build:
 
 push: login
 	docker push 423272453964.dkr.ecr.us-east-2.amazonaws.com/vaccine-efficacy:latest
+
+deploy:
+	aws ecs update-service --cluster default --service vaccine-efficacy --force-new-deployment
