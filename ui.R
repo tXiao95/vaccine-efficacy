@@ -1,4 +1,5 @@
 library(shiny)
+library(shinydashboard)
 library(shinyjs)
 library(plotly)
 
@@ -25,27 +26,25 @@ shinyUI(fluidPage(
             )
           ),
 
-# Default Prior and Data Parameters --------------------------------------------------------------
-
           wellPanel(
-            fluidRow(
-              column(4,
+
+# Default Select options --------------------------------------------------
+ 
+           fluidRow(
+              column(6,
                      selectInput("protocol", "Select interim analysis protocol", 
                                  c("Pfizer Interim 1", "Pfizer Interim 2", "Pfizer Interim 3", 
                                    "Pfizer Interim 4", "Pfizer Final", "Custom"))
               ),
-              column(5, 
+              column(6, 
                      selectInput("prior", "Select prior on Vaccine Efficacy", 
-                                 c("Very Skeptical", "Skeptical", "Cautiously Optimistic", "Optimistic", "Very Optimistic", "Custom"))
-              ), 
-              column(3, 
-                     numericInput("samples", "Number of Samples", value = 6000, min = 0, step = 1000)
+                                 c("Very Skeptical", "Skeptical", "Cautiously Optimistic", "Optimistic", "Very Optimistic", "VE prior", "Custom"))
               )
             ),
-            
-            fluidRow(
 
-# First column of data parameters -----------------------------------------
+# Option inputs -----------------------------------------------------------
+
+            fluidRow(
 
               column(4,
                      h4("Data parameters"),
@@ -54,29 +53,50 @@ shinyUI(fluidPage(
                      numericInput("cases", "Total cases", value = 30, min = 0, step = 1),
                      numericInput("vax_cases", "Vaccine cases", value = 10, min = 0, step = 1)
               ),
-
-# Second column of Gaussian mixture priors ---------------------------------
-
-              column(5,
-                     h4("Gaussian mixture prior on log(RR)"),
-                     numericInput('n', 'Number of mixture components', 
-                                  value = 2, 
-                                  min = 0, 
-                                  step = 1),
-                     fluidRow(
-                       column(4, uiOutput("lambda")),
-                       column(4, uiOutput("mu")),
-                       column(4, uiOutput("sigma"))
+              column(8, 
+                     tabsetPanel(type = "tabs", id = "options",
+                                 tabPanel("Basic Settings", 
+                                          h4("Prior on Vaccine Efficacy (VE)"),
+                                          column(6, 
+                                                 numericInput('mu_ve', 'Mean of VE',
+                                                              value = 0.5,
+                                                              max = 1, 
+                                                              step = 0.1
+                                                 )
+                                          ),
+                                          column(6, 
+                                                 numericInput('sigma_ve', 'Standard deviation',
+                                                              value = 0.3,
+                                                              min = 0, 
+                                                              step = 0.1
+                                                 )
+                                          )
+                                 ),
+                                 tabPanel("Custom Settings",
+                                          column(8,
+                                                 h4("Prior on log(RR)"),
+                                                 numericInput('n', 'Number of mixture components', 
+                                                              value = 2, 
+                                                              min = 0, 
+                                                              step = 1),
+                                                 fluidRow(
+                                                   column(4, uiOutput("lambda")),
+                                                   column(4, uiOutput("mu")),
+                                                   column(4, uiOutput("sigma"))
+                                                 )
+                                          ),
+                                          column(4,
+                                                 h4("Beta prior"),
+                                                 numericInput("alpha", "Alpha parameter", value = 4, min = 0),
+                                                 numericInput("beta", "Beta parameter", value = 160, min = 0),
+                                                 numericInput("samples", "Number of Samples", value = 6000, min = 0, step = 1000)
+                                          )
+                                  )
                      )
-              ),
+              
+              )
 
-# Third column of Beta priors --------------------------------------------
-
-              column(3,
-                     h4("Beta prior"),
-                     numericInput("alpha", "Alpha parameter", value = 4, min = 0),
-                     numericInput("beta", "Beta parameter", value = 160, min = 0)
-              ),
+              
             )
           ),
           uiOutput('ve_probs_title'),
@@ -86,7 +106,7 @@ shinyUI(fluidPage(
 # Plotting Side -----------------------------------------------------------
       
         column(6,
-               tabsetPanel(type = "tabs",
+               tabsetPanel(type = "tabs", id = "plots",
                            tabPanel("Plot",
                                     br(),
                                     plotlyOutput("ve_prior"),
