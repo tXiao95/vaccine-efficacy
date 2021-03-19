@@ -1,6 +1,7 @@
 library(shiny)
 library(LaplacesDemon)
 library(plotly)
+library(pryr)
 library(purrr)
 
 # helper functions --------------------------------------------------------
@@ -25,18 +26,6 @@ default_val <- function(x, value) {
     } 
 }
 
-# withConsoleRedirect <- function(containerId, expr) {
-#     # Change type="output" to type="message" to catch stderr
-#     # (messages, warnings, and errors) instead of stdout.
-#     txt <- capture.output(results <- expr, type = "output")
-#     if (length(txt) > 0) {
-#         insertUI(paste0("#", containerId), where = "beforeEnd",
-#                  ui = paste0(txt, "\n", collapse = "")
-#         )
-#     }
-#     results
-# }
-
 # Server Side -------------------------------------------------------------
 
 shinyServer(function(input, output, session) {
@@ -48,7 +37,7 @@ shinyServer(function(input, output, session) {
 # Actual stan model run ---------------------------------------------------
 
     dens <- eventReactive(input$do_sim, {
-        if(input$prior == "Custom"){
+        if(input$prior == "logRR prior"){
             lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], 100))
             mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
             sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
@@ -83,8 +72,8 @@ shinyServer(function(input, output, session) {
         samples <- extract(fit)
         ve <- samples$ve
         theta0 <- samples$theta0
-        
-        list(theta0=theta0, ve = ve, fit=fit)
+
+        list(theta0=theta0, ve = ve)
     }, ignoreNULL = FALSE)
     
 
@@ -136,7 +125,7 @@ shinyServer(function(input, output, session) {
 
 # Setting default priors by type ------------------------------------------
     observeEvent(input$prior, {
-        if(input$prior == "Custom"){
+        if(input$prior == "logRR prior"){
             showTab(inputId = "options", target = "Custom Settings", select = TRUE)
             hideTab(inputId = "options", target = "Basic Settings")
         } else{
@@ -203,7 +192,7 @@ shinyServer(function(input, output, session) {
         } else if(input$prior == "VE prior"){
             enable("mu_ve")
             enable("sigma_ve")
-        } else if(input$prior == "Custom"){
+        } else if(input$prior == "logRR prior"){
             enable("n")
             output$lambda <- renderUI({
                 map(lambda_names(), ~ numericInput(.x, .x, value = isolate(input[[.x]]), min=0, max=1 ,step=.01) %||% 0)
@@ -280,7 +269,8 @@ shinyServer(function(input, output, session) {
     observeEvent(input$do_sim, v$clear_posterior <- FALSE)
     
     output$ve_prior <- renderPlotly({
-        if(input$prior == "Custom"){
+        output$Memory <- renderText({paste0("Memory usage: ", mem_used())})
+        if(input$prior == "logRR prior"){
             lambda <- map_dbl(lambda_names(), ~ default_val(input[[.x]], 100))
             mu     <- map_dbl(mu_names(), ~ default_val(input[[.x]], NA))
             sigma  <- map_dbl(sigma_names(), ~ default_val(input[[.x]], NA))
