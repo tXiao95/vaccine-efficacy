@@ -14,14 +14,15 @@ shinyUI(fluidPage(
           titlePanel("Simulation Settings"),
           wellPanel(
             fluidRow(
-              column(2, offset=2,
+              column(3, offset=2, 
                      actionButton("do_sim", "Run Simulation", icon('laptop-code'))
               ),
-              column(2, 
+              column(3, 
                      actionButton("reset", "Reset Inputs", icon('undo'))
               ),
-              column(2,
-                     actionButton("clear_posterior", "Clear Posterior", icon('eraser'))
+              column(3,
+                     actionButton("clear_posterior", "Clear Posterior", icon('eraser')), 
+                     verbatimTextOutput("Memory")
               )
             )
           ),
@@ -33,12 +34,16 @@ shinyUI(fluidPage(
            fluidRow(
               column(6,
                      selectInput("protocol", "Select interim analysis protocol", 
-                                 c("Pfizer Interim 1", "Pfizer Interim 2", "Pfizer Interim 3", 
-                                   "Pfizer Interim 4", "Pfizer Final", "Custom"))
+                                 list(`Pfizer` = list("Pfizer Interim 1", "Pfizer Interim 2", "Pfizer Interim 3", 
+                                                      "Pfizer Interim 4", "Pfizer Final"),
+                                      `Moderna` = list("Moderna Interim 1", "Moderna Interim 2", "Moderna Interim 3", 
+                                                      "Moderna Interim 4", "Moderna Final"),
+                                      `Custom` = list("Custom")))
               ),
               column(6, 
                      selectInput("prior", "Select prior on Vaccine Efficacy", 
-                                 c("Very Skeptical", "Skeptical", "Cautiously Optimistic", "Optimistic", "Very Optimistic", "VE prior", "Custom"))
+                                 list(`Priors` = list("Very Skeptical", "Skeptical", "Cautiously Optimistic", "Optimistic", "Very Optimistic"),
+                                      `Custom` = list("VE prior", "logRR prior")))
               )
             ),
 
@@ -49,24 +54,25 @@ shinyUI(fluidPage(
               column(4,
                      h4("Data parameters"),
                      numericInput("N", "Total subjects at enrollment", value = 3000, min = 0, step = 1),
-                     numericInput("rratio", "Randomization ratio", value = 0.67, min = 0, max = .1),
-                     numericInput("cases", "Total cases", value = 30, min = 0, step = 1),
-                     numericInput("vax_cases", "Vaccine cases", value = 10, min = 0, step = 1)
+                     numericInput("rratio", "Randomization ratio", value = 0.5, min = 0, max = .1),
+                     numericInput("cases", "Total cases", value = 32, min = 0, step = 1),
+                     numericInput("vax_cases", "Vaccine cases", value = 6, min = 0, step = 1)
               ),
               column(8, 
                      tabsetPanel(type = "tabs", id = "options",
                                  tabPanel("Basic Settings", 
                                           h4("Prior on Vaccine Efficacy (VE)"),
+                                          # Make sure default values here match default setting on server side to prevent lag
                                           column(6, 
                                                  numericInput('mu_ve', 'Mean of VE',
-                                                              value = 0.5,
+                                                              value = 0.0,
                                                               max = 1, 
                                                               step = 0.1
                                                  )
                                           ),
                                           column(6, 
                                                  numericInput('sigma_ve', 'Standard deviation',
-                                                              value = 0.3,
+                                                              value = 0.1,
                                                               min = 0, 
                                                               step = 0.1
                                                  )
@@ -89,7 +95,7 @@ shinyUI(fluidPage(
                                                  h4("Beta prior"),
                                                  numericInput("alpha", "Alpha parameter", value = 4, min = 0),
                                                  numericInput("beta", "Beta parameter", value = 160, min = 0),
-                                                 numericInput("samples", "Number of Samples", value = 6000, min = 0, step = 1000)
+                                                 numericInput("samples", "Number of Samples", value = 6000, min = 0, max = 20000, step = 1000)
                                           )
                                   )
                      )
