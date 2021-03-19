@@ -39,3 +39,27 @@ sim <- vaccine_sim(rratio=2/3,
 ```
 
 ![](ve_posterior.png)
+
+## Deployment Architecture
+This containerized application (webservice) is deployed on Amazon Web Services (AWS) using the Elastic Container Service (ECS). The webservice is deployed on Fargate using an Application Load Balancer that routes traffic from TCP/80 (HTTP) to TCP/3838 in each container. The load balancer routes traffic to one of two containers that are deployed to support the service. When a new session is initiated, the load balancer assigns the session to a specific container and will route traffic to that container until the end of the session (this is required to facilitate the Websockets used by ShinyApp.)  In the event that a container fails or is terminated, it will be automatically restarted by the ECS service. There is no authentication on the application. Anyone with the URL may access it!
+
+### Deployment Procedure
+Deployment is straightforward. First, ensure your shell has `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` set in the environment.
+
+Make your changes, then build a new image:
+
+`make build`
+
+Push the image to ECR:
+
+`make push`
+
+Re-deploy the service to expose the updated web application:
+
+`make deploy`
+
+### Monitoring
+There is a [dashboard in Cloudwatch](https://us-east-2.console.aws.amazon.com/cloudwatch/home?region=us-east-2#dashboards:name=Vaccine-Efficacy-Webservice;start=PT12H) that shows the status of the service.
+
+### Known Issues
+The ShinyApp uses websockets to communicate between the browser and server. Since the load balancer can route traffic to one of any number of containers, sessions are "assigned" to a container and subsequence requests via the lb will be routed to the container that opened the websocket. These sessions time out after 60 minutes, so some WebSocket errors may be encountered if a browser window is left open for longer than an hour. Refreshing the page will fix this.
