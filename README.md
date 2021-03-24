@@ -2,43 +2,17 @@
 ## Overview
 
 There is interest in understanding how ending vaccine trials early at
-the time of interim analyses would affect inference on vaccine efficacy.
-A Bayesian approach is a way to gain some insight by answering the
-question “What is the probability that vaccine efficacy exceeds 50%,
-given certain prior assumptions and ending the study early?” Ending the
-study early is defined as observing a certain number of cases across
-both vaccine and placebo arms of the trial.
+the time of interim analyses in randomization trials would affect inference on vaccine efficacy (VE). A Bayesian approach can offer insight by allowing us to estimate the probability that VE exceeds a certain threshold, given prior assumptions on VE. Ending the
+study early is defined as observing a given number of cases across
+both vaccine and placebo arms of the trial. Pfizer, Moderna, and other companies have offered details on when they decided to end the trials. 
 
-## Some Results
+## Shiny interface
 
-Below is an example of 3000 subjects at enrollment, where the analysis
-was stopped at 30 observed cases with 10 of them observed in the vaccine
-arm.
+The visualization allows the user to first select 1) a prior on the VE mean and standard deviation 2) the interim analysis endpoint to be used as data. Once those two options are selected, the button "Run Simulation" will feed the prior and data into a Stan model that calculates the posterior VE distribution in the background. The user can then visualize the prior and posterior distributions of VE together. 
 
-``` r
-#' @param rratio randomization ratio: # vax / # total
-#' @param cases total cases at time of interim analysis
-#' @param vax_cases number of cases of total cases in vax arm
-#' @param N total number of subjects (vax and placebo) at enrollment
-  
-#' @param lambda vector of mixing proportions
-#' @param mu vector mean of logRR ~ N(mu_i, sigma_i)
-#' @param sigma vector sd of logRR ~ N(mu_i, sigma_i)
+Below is an example of the Pfizer Interim endpoint 3, with 3000 subjects at enrollment, a 50% randomization ratio, 25 out of 92 observed cases occurring in the vaccine arm and a "Cautiously Optimistic" prior on VE. 
 
-#' @param alpha param of theta0 ~ Beta(alpha, beta)
-#' @param beta param of theta0 ~ Beta(alpha, beta)
-  
-sim <- vaccine_sim(rratio=2/3, 
-                   cases=30, 
-                   vax_cases=10, 
-                   N=3000, 
-                   lambda=c(.1, .45, .45), 
-                   mu=c(0, -.38, -.1), 
-                   sigma=c(0.01, .325, .325), 
-                   alpha=.15, beta=10, iter=1000)
-```
-
-![](ve_posterior.png)
+![](dashboard.png)
 
 ## Deployment Architecture
 This containerized application (webservice) is deployed on Amazon Web Services (AWS) using the Elastic Container Service (ECS). The webservice is deployed on Fargate using an Application Load Balancer that routes traffic from TCP/80 (HTTP) to TCP/3838 in each container. The load balancer routes traffic to one of two containers that are deployed to support the service. When a new session is initiated, the load balancer assigns the session to a specific container and will route traffic to that container until the end of the session (this is required to facilitate the Websockets used by ShinyApp.)  In the event that a container fails or is terminated, it will be automatically restarted by the ECS service. There is no authentication on the application. Anyone with the URL may access it!
